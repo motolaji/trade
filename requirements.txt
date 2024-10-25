@@ -1,6 +1,6 @@
 # Core Machine Learning & Vision
 torch>=1.9.0
-torchvision>=0.10.0
+torchvision>=0.17.2
 numpy==1.26.4
 opencv-python>=4.5.3
 Pillow>=8.3.1

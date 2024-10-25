@@ -4,22 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="4599706a-a43a-4881-b677-c05450170d4b" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/trademark.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/feature_extractor.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/image_loader.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/index_builder.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/load.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/some.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test_extractor.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test_loader.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/text_index.py" afterDir="false" />
+    <list default="true" id="4599706a-a43a-4881-b677-c05450170d4b" name="Changes" comment="Trademark Similarity and Novelty checker init commit">
+      <change afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/similarity_searcher.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test_similarity.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test_visualizer.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/trademark_analyzer.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/visualizer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature_extractor.py" beforeDir="false" afterPath="$PROJECT_DIR$/feature_extractor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -29,30 +23,35 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 1
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 1
+}</component>
   <component name="ProjectId" id="2nvCqD5TXdGNzH5C5SQX8hNY0wu" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python tests.Python tests in main.py.executor": "Run",
-    "Python tests.Python tests in test_extractor.py.executor": "Run",
-    "Python tests.Python tests in text_index.py.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python tests.Doctests in module.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests in main.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests in test_extractor.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests in test_loader.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests in test_similarity.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests in test_visualizer.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests in text_index.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$" />
@@ -74,14 +73,39 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1729844350488</updated>
-      <workItem from="1729844351817" duration="7667000" />
+      <workItem from="1729844351817" duration="10638000" />
+      <workItem from="1729864205347" duration="2857000" />
+      <workItem from="1729873445042" duration="1867000" />
     </task>
+    <task id="LOCAL-00001" summary="Trademark Similarity and Novelty checker init commit">
+      <option name="closed" value="true" />
+      <created>1729857603134</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1729857603134</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Trademark Similarity and Novelty checker init commit">
+      <option name="closed" value="true" />
+      <created>1729857679744</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1729857679744</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Trademark Similarity and Novelty checker init commit" />
+    <option name="LAST_COMMIT_MESSAGE" value="Trademark Similarity and Novelty checker init commit" />
+  </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/trademark$.coverage" NAME=" Coverage Results" MODIFIED="1729856196959" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/trademark$main.coverage" NAME="main Coverage Results" MODIFIED="1729866035954" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/trademark$Doctests_in_module.coverage" NAME="Doctests in module Coverage Results" MODIFIED="1729864869316" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/.venv/lib/python3.9/site-packages/torch/nn/modules" />
+    <SUITE FILE_PATH="coverage/trademark$.coverage" NAME=" Coverage Results" MODIFIED="1729873815109" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
