@@ -1,5 +1,7 @@
 import numpy as np
 from scipy.spatial.distance import cosine
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 
 class SimilaritySearcher:

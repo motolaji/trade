@@ -8,7 +8,7 @@ scikit-learn>=0.24.2
 scikit-image>=0.18.3
 
 # Similarity Search
-faiss-cpu>=1.7.1
+faiss-gpu-cu12
 
 # Image Processing
 imagehash>=4.2.1

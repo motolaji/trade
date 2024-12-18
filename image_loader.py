@@ -1,3 +1,6 @@
+import requests
+import io
+from urllib.parse import urlparse
 from PIL import Image
 import numpy as np
 import cv2

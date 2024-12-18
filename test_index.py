@@ -6,10 +6,10 @@ from pathlib import Path
 def test_indexer():
     # Initialize components
     extractor = FeatureExtractor()
-    indexer = IndexBuilder()
+    indexer = IndexBuilder() 
 
     # Get test images
-    dataset_path = Path('../trademark/L3D_dataset/images')
+    dataset_path = Path('C:/Users/jajim/Desktop/dissertation/trade/new_images_dataset')
     image_paths = list(dataset_path.glob('*.[jp][pn][g]'))
 
     try:

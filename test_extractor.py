@@ -1,9 +1,13 @@
 from feature_extractor import FeatureExtractor
+from PIL import Image
+
 
 
 def test_extractor():
     extractor = FeatureExtractor()
-    image_path = '../trademark/L3D_dataset/images/fffff6ec-af49-4d8e-98df-b7eb0f53067a.jpg'  # Add your test image
+    image_path = './L3D-dataset/dataset/images/c4b31b5e-5e91-41ff-926e-81406b65835a.JPG' 
+    image = Image.open(image_path)
+    image.show() # Add your test image
 
     try:
         features = extractor.extract_features(image_path)
@@ -19,3 +23,4 @@ def test_extractor():
 
 if __name__ == "__main__":
     test_extractor()
+

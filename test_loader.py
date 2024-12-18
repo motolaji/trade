@@ -2,7 +2,7 @@ from image_loader import ImageLoader
 
 def test_loader():
     # Load a test image
-    image_path = '../trademark/L3D_dataset/images/fffff6ec-af49-4d8e-98df-b7eb0f53067a.jpg'  # Add your test image
+    image_path = './L3D-dataset/dataset/images/2dbcd05e-b951-42bc-8361-eb3034aebc6d.JPG'  # Add your test image
     try:
         image_data = ImageLoader.load_image(image_path)
         print("Image loaded successfully!")
@@ -12,3 +12,5 @@ def test_loader():
 
 if __name__ == "__main__":
     test_loader()
+
+ 

@@ -13,8 +13,8 @@ from image_loader import ImageLoader
 class FeatureExtractor:
     def __init__(self):
         # Initialize model
-        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.device = torch.device('cpu')
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # self.device = torch.device('cpu')
         self.model = models.resnet50(weights="IMAGENET1K_V1") 
         self.model = torch.nn.Sequential(*list(self.model.children())[:-1])
         self.model = self.model.to(self.device)
