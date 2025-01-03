@@ -17,6 +17,10 @@ import tempfile
 from uploadBucket import s3_upload
 from checker import searcher
 from test_similarity import test_searcher
+import asyncio
+import os
+from revised_index import IndexBuilder
+from feature_extractor import FeatureExtractor
 
 app = FastAPI()
 
@@ -27,6 +31,7 @@ db = client.user_db
 collection = db.users
 image_collection = db.images
 similarity_collection = db.similarity
+index_history_collection = db.index_history
 
 # JWT Configuration
 
@@ -37,6 +42,15 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 300
 # Password Hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="signin")
+
+
+ #Global lock and status tracking
+indexing_lock = asyncio.Lock()
+indexing_status = {
+    "is_indexing": False,
+    "current_indexer": None,
+    "start_time": None
+}
 
 #Pydantic Models
 
@@ -89,7 +103,27 @@ class UploadData(BaseModel):
 class UserUploadsResponse(BaseModel):
     status: str
     total_uploads: int
-    data: List[Any]         
+    data: List[Any]   
+
+
+
+# Admin models
+class AdminCreate(BaseModel):
+    email: EmailStr
+    password: str
+    firstname: str
+    lastname: str
+
+class AdminLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class AdminResponse(BaseModel):
+    id: str
+    email: str
+    firstname: str
+    lastname: str
+    created_at: datetime          
 
 #helper functions
 
@@ -121,6 +155,14 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         raise credentials_exception
     return user    
 
+
+async def check_admin(current_user: dict = Depends(get_current_user)):
+    if not current_user.get("is_admin", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized. Admin access required."
+        )
+    return current_user
 
 def generate_unique_filename(original_filename:str) -> str:
     ext = original_filename.lower().split(".")[-1]
@@ -186,147 +228,6 @@ async def read_users_me(current_user: UserResponse = Depends(get_current_user)):
     return UserResponse(email=current_user["email"], username=current_user["username"],
                         firstname=current_user["firstname"], lastname=current_user["lastname"]
                         )
-
-@app.post("/uplaod-image", response_model=ImageResponse)
-async def upload_image(
-    title:str = Form(...),
-    description:str = Form(...),
-    image: UploadFile = File(...),
-    current_user: dict = Depends(get_current_user)
-    ):
-    try:
-        if not image.content_type.startswith("image/"):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-             detail="Only images allowed") 
-
-        # generate unique filename
-        contents = image.file.read()
-        image.file.seek(0)
-        image_data = Image.open(io.BytesIO(contents))
-        unique_filename = generate_unique_filename(image.filename)
-
-        # read and upload file to s3
-        #  contents = await image.read()   
-        # 
-        bucket_name = 'trademarkdesign'
-        # upload to s3
-        s3_upload(image.file, bucket_name, unique_filename)  
-
-        # s3 url
-        image_url = f"https://trademarkdesign.s3.eu-north-1.amazonaws.com/{unique_filename}"
-
-        # create image document  
-
-        processing_results = await process_image(image.file)
-
-        image_doc = {
-            "user_id": str(current_user["_id"]),
-            "title": title,
-            "description": description,
-            "image_url": image_url,
-            "filename": unique_filename,
-            "processed_results": processing_results,
-            "created_at": datetime.utcnow()
-        }
-
-        result = await image_collection.insert_one(image_doc)
-
-        return {
-            "id": str(result.inserted_id),
-            "title": title,
-            "description": description,
-            "image_url": image_url,
-            "processed_results": processing_results,
-            "created_at": image_doc["created_at"]
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail=str(e))
-    finally:
-        image.file.close()
-
-# @app.post("/searcher")
-# async def upload_image(
-#     title:str = Form(...),
-#     description:str = Form(...),
-#     current_user: dict = Depends(get_current_user),
-#     image: UploadFile = File(...)
-#     ):
-#     try:
-#          if not image.content_type.startswith("image/"):
-#             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-#              detail="Only images allowed")
-         
-#          contents = await image.read()
-#          new_image = image.file
-#         #  image.file.seek(0)
-#          image_data = Image.open(io.BytesIO(contents))
-#          unique_filename = generate_unique_filename(image.filename)
-
-#         # read and upload file to s3
-#         #  contents = await image.read()   
-#         # 
-#          bucket_name = 'trademarkdesign'
-#         # upload to s3
-         
-#          processing_results =  searcher(new_image)
-#          formatted_results = []
-#          is_novel = []
-
-#          if any(result['novel'] == False for result in processing_results):
-#              is_novel.append({'is_novel': False})
-#          else:
-#              is_novel.append({'is_novel': True})
-
-#          for result in processing_results:
-#              formatted_result = {
-#                     'path': result['path'],
-#                     'metadata': {
-#                         'original_filename': result['metadata']['original_filename'],
-#                         's3_filename': result['metadata']['s3_filename'],
-#                         'vienna_codes': result['metadata']['vienna_codes'],
-#                         'year': result['metadata']['year'],
-#                         'text': result['metadata']['text']
-#                     },
-#                     'similarity': result['similarity'],
-#              }
-#              formatted_results.append(formatted_result)
-#          s3_upload(new_image, bucket_name, unique_filename)  
-
-#         # s3 url
-#          image_url = f"https://trademarkdesign.s3.eu-north-1.amazonaws.com/{unique_filename}"
-#             # add to DB
-#          similarity_result = {
-#             "user_id": str(current_user["_id"]),
-#             "title": title,
-#             "description": description,
-#             "queried_image":image_url,
-#             "processed_results": formatted_results,
-#             "novelty": is_novel,
-#             "created_at": datetime.utcnow()
-#         } 
-         
-#          result = await similarity_collection.insert_one(similarity_result)
-
-
-#          # Return statement moved outside the loop
-#          return {
-#             "status": "success",
-#             "queried_image":image_url,
-#             "results": formatted_results,
-#             "novelty": is_novel,
-#             "message": f"Found {len(formatted_results)} similar images"
-#         }
-    
-    
-
-#     except Exception as e:
-#         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#                             detail=str(e))
-#     finally:
-#         image.file.close()
-
 
 @app.post("/searcher")
 async def upload_image(
@@ -561,3 +462,304 @@ async def get_user_uploads(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error retrieving uploads: {str(e)}"
         )
+    
+@app.post("/admin/index")
+async def index_images(
+    dataset: UploadFile = File(...),
+    metadata_json: UploadFile = File(...),
+    current_user: dict = Depends(check_admin)
+):
+    # Create temporary directories to store uploads
+    temp_dataset_dir = None
+    temp_json_path = None
+    
+    try:
+        if indexing_status["is_indexing"]:
+            return {
+                "status": "error",
+                "message": f"Indexing already in progress by {indexing_status['current_indexer']} since {indexing_status['start_time']}"
+            }
+
+        if not await indexing_lock.acquire():
+            return {
+                "status": "error",
+                "message": "Could not acquire indexing lock"
+            }
+
+        start_time = datetime.utcnow()
+        indexing_details = {
+            "start_time": start_time,
+            "indexed_by": str(current_user["_id"]),
+            "indexer_email": current_user.get("email", "Unknown"),
+            "status": "in_progress",
+            "dataset_name": dataset.filename,
+            "metadata_file": metadata_json.filename
+        }
+
+        # Insert initial record
+        history_id = await index_history_collection.insert_one(indexing_details)
+
+        # Create temporary directory for dataset
+        temp_dataset_dir = tempfile.mkdtemp()
+        dataset_path = Path(temp_dataset_dir)
+
+        # Create temporary file for JSON
+        temp_json_fd, temp_json_path = tempfile.mkstemp(suffix='.json')
+        os.close(temp_json_fd)
+
+        try:
+            # Update indexing status
+            indexing_status.update({
+                "is_indexing": True,
+                "current_indexer": current_user.get("email", "Unknown"),
+                "start_time": start_time
+            })
+
+            # Save JSON file
+            with open(temp_json_path, 'wb') as json_file:
+                shutil.copyfileobj(metadata_json.file, json_file)
+
+            # Extract dataset if it's a zip file
+            if dataset.filename.endswith('.zip'):
+                import zipfile
+                with zipfile.ZipFile(dataset.file) as zip_ref:
+                    zip_ref.extractall(temp_dataset_dir)
+            else:
+                # Save individual file
+                dataset_file_path = os.path.join(temp_dataset_dir, dataset.filename)
+                with open(dataset_file_path, 'wb') as dataset_file:
+                    shutil.copyfileobj(dataset.file, dataset_file)
+
+            # Initialize components
+            extractor = FeatureExtractor()
+            indexer = IndexBuilder()
+
+            # Get image paths
+            image_paths = []
+            for ext in ('*.jpg', '*.jpeg', '*.png'):
+                image_paths.extend(dataset_path.glob(ext))
+
+            if not image_paths:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="No images found in uploaded dataset"
+                )
+
+            # Build index
+            num_indexed = indexer.build_index(image_paths, temp_json_path, extractor)
+
+            # Load and verify index
+            index, features_file = indexer.load_index()
+            total_vectors = index.ntotal
+            features_file.close()
+
+            end_time = datetime.utcnow()
+            duration = (end_time - start_time).total_seconds()
+
+            # Update index history with results
+            await index_history_collection.update_one(
+                {"_id": history_id.inserted_id},
+                {
+                    "$set": {
+                        "end_time": end_time,
+                        "duration_seconds": duration,
+                        "images_indexed": num_indexed,
+                        "total_vectors": total_vectors,
+                        "status": "completed",
+                        "success": True,
+                        "image_count": len(image_paths)
+                    }
+                }
+            )
+
+            return {
+                "status": "success",
+                "message": f"Successfully indexed {num_indexed} images",
+                "total_vectors": total_vectors,
+                "duration_seconds": duration,
+                "index_id": str(history_id.inserted_id)
+            }
+
+        finally:
+            # Cleanup temporary files
+            if temp_dataset_dir and os.path.exists(temp_dataset_dir):
+                shutil.rmtree(temp_dataset_dir)
+            if temp_json_path and os.path.exists(temp_json_path):
+                os.remove(temp_json_path)
+
+            # Reset indexing status and release lock
+            indexing_status.update({
+                "is_indexing": False,
+                "current_indexer": None,
+                "start_time": None
+            })
+            indexing_lock.release()
+
+    except Exception as e:
+        # Update index history with error
+        if 'history_id' in locals():
+            await index_history_collection.update_one(
+                {"_id": history_id.inserted_id},
+                {
+                    "$set": {
+                        "end_time": datetime.utcnow(),
+                        "status": "failed",
+                        "error": str(e),
+                        "success": False
+                    }
+                }
+            )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error during indexing: {str(e)}"
+        )    
+    
+
+@app.get("/admin/index-history")
+async def get_index_history(
+    current_admin: dict = Depends(check_admin),
+    limit: int = 10
+):
+    try:
+        cursor = index_history_collection.find({}).sort("start_time", -1).limit(limit)
+        history = await cursor.to_list(length=limit)
+        
+        formatted_history = []
+        for record in history:
+            formatted_record = {
+                "id": str(record["_id"]),
+                "start_time": record["start_time"],
+                "end_time": record.get("end_time"),
+                "duration_seconds": record.get("duration_seconds"),
+                "indexed_by": record["indexer_email"],
+                "status": record["status"],
+                "images_indexed": record.get("images_indexed"),
+                "total_vectors": record.get("total_vectors"),
+                "success": record.get("success", False),
+                "error": record.get("error")
+            }
+            formatted_history.append(formatted_record)
+
+        return {
+            "status": "success",
+            "data": formatted_history
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving index history: {str(e)}"
+        )
+
+@app.get("/admin/index-history/{index_id}")
+async def get_index_details(
+    index_id: str,
+    current_admin: dict = Depends(check_admin)
+):
+    try:
+        record = await index_history_collection.find_one({"_id": ObjectId(index_id)})
+        
+        if not record:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Index record not found"
+            )
+
+        return {
+            "status": "success",
+            "data": {
+                "id": str(record["_id"]),
+                "start_time": record["start_time"],
+                "end_time": record.get("end_time"),
+                "duration_seconds": record.get("duration_seconds"),
+                "indexed_by": record["indexer_email"],
+                "status": record["status"],
+                "images_indexed": record.get("images_indexed"),
+                "total_vectors": record.get("total_vectors"),
+                "success": record.get("success", False),
+                "error": record.get("error")
+            }
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving index details: {str(e)}"
+        )
+    
+# Admin Auth Routes
+@app.post("/admin/signup", response_model=AdminResponse)
+async def admin_signup(admin: AdminCreate):
+    try:
+        existing_admin = await collection.find_one({"email": admin.email})
+        if existing_admin:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered"
+            )
+
+
+        hashed_password = pwd_context.hash(admin.password)
+        # hashed_password = bcrypt.hashpw(admin.password.encode('utf-8'), bcrypt.gensalt())
+        
+        admin_doc = {
+            "email": admin.email,
+            "password": hashed_password,
+            "firstname": admin.firstname,
+            "lastname": admin.lastname,
+            "is_admin": True,
+            "created_at": datetime.utcnow()
+        }
+
+        result = await collection.insert_one(admin_doc)
+        created_admin = await collection.find_one({"_id": result.inserted_id})
+
+        return {
+            "id": str(created_admin["_id"]),
+            "email": created_admin["email"],
+            "firstname": created_admin["firstname"],
+            "lastname": created_admin["lastname"],
+            "created_at": created_admin["created_at"]
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+@app.post("/admin/login")
+async def admin_login(form_data: OAuth2PasswordRequestForm = Depends()):
+    try:
+        user = await collection.find_one({"email": form_data.username})
+        
+        if not user or not user.get("is_admin", False):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid admin credentials"
+            )
+        if not user or not pwd_context.verify(form_data.password, user["password"]):
+        # if not bcrypt.checkpw(form_data.password.encode('utf-8'), user["password"]):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid admin credentials"
+            )
+
+        token_data = {
+            "sub": str(user["_id"]),
+            "email": user["email"],
+            "is_admin": True
+        }
+        
+        access_token = create_access_token(token_data)
+
+        return {
+            "access_token": access_token,
+            "token_type": "bearer"
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )    
