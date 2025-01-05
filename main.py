@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, status, File, UploadFile, Form
+from fastapi import FastAPI, HTTPException, Depends, status, File, UploadFile, Form, Body
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -21,6 +21,7 @@ import asyncio
 import os
 from revised_index import IndexBuilder
 from feature_extractor import FeatureExtractor
+
 
 app = FastAPI()
 
@@ -60,6 +61,10 @@ class UserCreate(BaseModel):
     lastname: str
     email: EmailStr
     password: str
+
+class UserSignin(BaseModel):
+    username: str
+    password: str    
 
 class UserResponse(BaseModel):
    username: str
@@ -207,7 +212,7 @@ async def signup(user: UserCreate):
                          lastname=user.lastname)
 
 @app.post("/signin", response_model=Token)
-async def signin(form_data: OAuth2PasswordRequestForm = Depends()):
+async def signin(form_data: UserSignin ):
 
     # find user in db
     user = await collection.find_one({"email": form_data.username})
@@ -233,8 +238,8 @@ async def read_users_me(current_user: UserResponse = Depends(get_current_user)):
 async def upload_image(
     title: str = Form(...),
     description: str = Form(...),
-    current_user: dict = Depends(get_current_user),
-    image: UploadFile = File(...)
+    image: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
 ):
     # Initialize file_object to None outside try block
     file_object = None
@@ -304,7 +309,7 @@ async def upload_image(
             "queried_image": image_url,
             "results": formatted_results,
             "novelty": is_novel,
-            "message": f"Found {len(formatted_results)} similar images"
+            "message": f"Found {len(formatted_results)} similar trademark designs"
         }
 
     except Exception as e:
